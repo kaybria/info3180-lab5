@@ -5,11 +5,13 @@ Werkzeug Documentation:  https://werkzeug.palletsprojects.com/
 This file creates your application.
 """
 
-from app import app
-from flask import render_template, request, jsonify, send_file
+from app import app, db
+from flask import render_template, request, jsonify, send_file, url_for,send_from_directory
 import os
-
-
+from app.models import Movie
+from app.forms import MovieForm
+from werkzeug.utils import secure_filename
+from datetime import datetime
 ###
 # Routing for your application.
 ###
@@ -18,7 +20,34 @@ import os
 def index():
     return jsonify(message="This is the beginning of our API")
 
+@app.route('/api/v1/movies', methods=['POST'])
+def movies():
+    movieform = MovieForm()
+    if movieform.validate_on_submit():
+        title= movieform.title.data
+        description = movieform.description.data
+        poster = movieform.poster.data
+        created_at = datetime.utcnow()
+        pname=secure_filename(poster.filename)
+        poster.save(os.path.join(app.config['UPLOAD_FOLDER'],pname))
 
+        newmovie = Movie(title,description,pname,created_at)
+        db.session.add(newmovie)
+        db.session.commit()
+        movieresult = {
+            "message": "Movie Successfully added",
+            "title": title,
+            "description": description,
+            "poster": url_for('getimages', filename = pname)
+        }
+        return jsonify(data = movieresult)
+    return jsonify(form_errors(movieform))
+
+
+@app.route('/uploads/<filename>')
+def getimages(filename):
+    #rootdir = os.getcwd()
+    return send_from_directory(os.path.join(os.getcwd(),app.config['UPLOAD_FOLDER']), filename)
 ###
 # The functions below should be applicable to all Flask apps.
 ###
