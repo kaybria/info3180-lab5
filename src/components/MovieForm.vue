@@ -4,7 +4,6 @@
   onMounted(() => {
     getCsrfToken();
   });
-
   function getCsrfToken() {
     fetch('/api/v1/csrf-token')
       .then((response) => response.json())
@@ -13,11 +12,9 @@
         csrf_token.value = data.csrf_token;
       })
     }
-
   function saveMovie() {
   let movieForm =document.getElementById('movieForm');
   let form_data = new FormData(movieForm);
-
   fetch("/api/v1/movies", {
     method: 'POST',
     body: form_data,

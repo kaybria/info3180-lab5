@@ -21,30 +21,47 @@ from flask_wtf.csrf import generate_csrf
 def index():
     return jsonify(message="This is the beginning of our API")
 
-@app.route('/api/v1/movies', methods=['POST'])
+@app.route('/api/v1/movies', methods=['POST','GET'])
 def movies():
     print("From")
     movieform = MovieForm()
-    print('hello1')
-    if movieform.validate_on_submit():
-        title= movieform.title.data
-        description = movieform.description.data
-        poster = movieform.poster.data
-        created_at = datetime.utcnow()
-        pname=secure_filename(poster.filename)
-        poster.save(os.path.join(app.config['UPLOAD_FOLDER'],pname))
-
-        newmovie = Movie(title,description,pname,created_at)
-        db.session.add(newmovie)
-        db.session.commit()
+    if request.method == 'POST':
         
-        movieresult = {
-            "message": 'Movie Successfully added',
-            "title": title,
-            "poster": pname,
-            "description": description}
-        return jsonify(data = movieresult)
-    return jsonify(errors =form_errors(movieform))
+        print('hello1')
+        if movieform.validate_on_submit():
+            title= movieform.title.data
+            description = movieform.description.data
+            poster = movieform.poster.data
+            created_at = datetime.utcnow()
+            pname=secure_filename(poster.filename)
+            poster.save(os.path.join(app.config['UPLOAD_FOLDER'],pname))
+
+            newmovie = Movie(title,description,pname,created_at)
+            db.session.add(newmovie)
+            db.session.commit()
+            
+            movieresult = {
+                "message": 'Movie Successfully added',
+                "title": title,
+                "poster": pname,
+                "description": description}
+            return jsonify(data = movieresult)
+        return jsonify(errors =form_errors(movieform))
+    else:
+         movies = Movie.query.all()
+         allmovies = []
+         for m in movies:
+            allmovies.append({
+            "id":m.id,
+            "title" :m.title,
+            "description":m.description,
+            "poster": url_for('getimages',filename = m.poster)
+        })
+    return jsonify(movies=allmovies)
+
+
+ 
+   
 
 @app.route('/api/v1/csrf-token', methods=['GET'])
 def get_csrf():
