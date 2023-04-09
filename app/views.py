@@ -12,6 +12,7 @@ from app.models import Movie
 from app.forms import MovieForm
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from flask_wtf.csrf import generate_csrf
 ###
 # Routing for your application.
 ###
@@ -22,7 +23,9 @@ def index():
 
 @app.route('/api/v1/movies', methods=['POST'])
 def movies():
+    print("From")
     movieform = MovieForm()
+    print('hello1')
     if movieform.validate_on_submit():
         title= movieform.title.data
         description = movieform.description.data
@@ -34,17 +37,20 @@ def movies():
         newmovie = Movie(title,description,pname,created_at)
         db.session.add(newmovie)
         db.session.commit()
+        
         movieresult = {
-            "message": "Movie Successfully added",
+            "message": 'Movie Successfully added',
             "title": title,
-            "description": description,
-            "poster": url_for('getimages', filename = pname)
-        }
+            "poster": pname,
+            "description": description}
         return jsonify(data = movieresult)
-    return jsonify(form_errors(movieform))
+    return jsonify(errors =form_errors(movieform))
 
+@app.route('/api/v1/csrf-token', methods=['GET'])
+def get_csrf():
+    return jsonify({'csrf_token': generate_csrf()})
 
-@app.route('/uploads/<filename>')
+@app.route('/api/v1/poster/<filename>')
 def getimages(filename):
     #rootdir = os.getcwd()
     return send_from_directory(os.path.join(os.getcwd(),app.config['UPLOAD_FOLDER']), filename)
